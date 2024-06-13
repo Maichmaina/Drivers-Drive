@@ -1,70 +1,87 @@
-from models import CarType, Car
+# cli.py
 
-def display_car_types():
-    car_types = CarType.get_all()
-    print("Car Types:")
-    for car_type in car_types:
-        print(f"ID: {car_type.id}, Name: {car_type.name}, Rate Per Day: {car_type.rate_per_day}")
+import sys
+from cars import Base, Car
+from maintenance import Maintenance
+from comments import Comment
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
-def create_car_type():
-    name = input("Enter car type name: ")
-    rate_per_day = int(input("Enter rate per day: "))
-    CarType.create(name, rate_per_day)
-    print("Car type created successfully.")
+# Define the database connection URL
+DB_URL = 'sqlite:///car_rental.db'
 
-def delete_car_type():
-    display_car_types()
-    id = int(input("Enter ID of car type to delete: "))
-    CarType.delete(id)
-    print("Car type deleted successfully.")
+# Create the SQLAlchemy engine
+engine = create_engine(DB_URL)
 
-def display_cars():
-    cars = Car.get_all()
-    print("Cars:")
+# Bind the engine to the Base class
+Base.metadata.bind = engine
+
+# Create all tables in the database (if they don't exist)
+Base.metadata.create_all(engine)
+
+# Create a session maker bound to the engine
+Session = sessionmaker(bind=engine)
+
+# Define other functions and main menu code...
+
+def list_cars():
+    session = Session()
+    cars = session.query(Car).all()
     for car in cars:
-        print(f"ID: {car.id}, Car Type ID: {car.car_type_id}")
+        print(car)
 
-def create_car():
-    display_car_types()
-    car_type_id = int(input("Enter ID of car type: "))
-    Car.create(car_type_id)
-    print("Car created successfully.")
+def find_car_by_make():
+    session = Session()
+    make = input("Enter the car's make: ")
+    cars = session.query(Car).filter(Car.make == make).all()
+    for car in cars:
+        print(car) if car else print(f'Car with make {make} not found')
 
-def delete_car():
-    display_cars()
-    id = int(input("Enter ID of car to delete: "))
-    Car.delete(id)
-    print("Car deleted successfully.")
+def find_car_by_vin():
+    session = Session()
+    vin = input("Enter the car's VIN: ")
+    car = session.query(Car).filter(Car.vin == vin).first()
+    if car:
+        print(car)
+    else:
+        print(f'Car with VIN {vin} not found')
+
+# Define other functions...
 
 def main():
+    # Main menu options...
+
     while True:
-        print("\n1. Display Car Types")
-        print("2. Create Car Type")
-        print("3. Delete Car Type")
-        print("4. Display Cars")
-        print("5. Create Car")
-        print("6. Delete Car")
-        print("7. Exit")
+        # Display main menu...
 
-        choice = int(input("Enter your choice: "))
+        choice = input("> ")
 
-        if choice == 1:
-            display_car_types()
-        elif choice == 2:
-            create_car_type()
-        elif choice == 3:
-            delete_car_type()
-        elif choice == 4:
-            display_cars()
-        elif choice == 5:
-            create_car()
-        elif choice == 6:
-            delete_car()
-        elif choice == 7:
-            break
-        else:
-            print("Invalid choice. Please try again.")
+        if choice == "0":
+            print("Goodbye!")
+            sys.exit()
+        elif choice == "1":
+            # Cars menu
+            while True:
+                # Display cars menu...
+
+                choice = input("> ")
+                if choice == "0":
+                    break
+                elif choice == "1":
+                    list_cars()
+                elif choice == "2":
+                    find_car_by_make()
+                elif choice == "3":
+                    find_car_by_vin()
+                elif choice == "4":
+                    create_car()
+                elif choice == "5":
+                    update_car()
+                elif choice == "6":
+                    delete_car()
+                else:
+                    print("Invalid choice! Please enter a valid option.")
+       
 
 if __name__ == "__main__":
     main()
-
