@@ -4,6 +4,48 @@ from cars import Car
 from maintenance import Maintenance
 from comments import Comment
 
+db_path = '/home/lenny/development/Phase-3/Project/Drivers-Drive/lib/db/car_management.db'
+
+
+def create_tables():
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    # Create cars table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS cars (
+            vin TEXT PRIMARY KEY,
+            make TEXT NOT NULL,
+            model TEXT NOT NULL,
+            year INTEGER NOT NULL
+        )
+    ''')
+
+    # Create maintenance table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS maintenance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            car_vin TEXT NOT NULL,
+            maintenance_type TEXT NOT NULL,
+            description TEXT,
+            date_performed TEXT NOT NULL,
+            FOREIGN KEY (car_vin) REFERENCES cars(vin) ON DELETE CASCADE
+        )
+    ''')
+
+    # Create comments table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS comments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            maintenance_id INTEGER NOT NULL,
+            comment_text TEXT NOT NULL,
+            FOREIGN KEY (maintenance_id) REFERENCES maintenance(id) ON DELETE CASCADE
+        )
+    ''')
+
+    conn.commit()
+    conn.close()
+
 def list_cars():
     cars = Car.get_all()
     for car in cars:
@@ -14,14 +56,6 @@ def find_car_by_make():
     cars = Car.find_by_make(make)
     for car in cars:
         print(car) if car else print(f'Car with make {make} not found')
-
-def find_car_by_vin():
-    vin = input("Enter the car's VIN: ")
-    car = Car.find_by_id(vin)
-    if car:
-        print(f"Car found: VIN={car.vin}, Make={car.make}, Model={car.model}, Year={car.year}")
-    else:
-        print(f'Car with VIN {vin} not found')
 
 def find_car_by_vin():
     vin = input("Enter the car's VIN: ")
@@ -69,9 +103,21 @@ def delete_car():
         print(f'Car with VIN {vin} not found')
 
 def list_maintenances():
-    maintenances = Maintenance.get_all()
-    for maintenance in maintenances:
-        print(maintenance)
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT * FROM maintenance")
+        maintenances = cursor.fetchall()
+
+        for maintenance in maintenances:
+            print(maintenance)
+
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+
+    finally:
+        conn.close()
 
 def find_maintenance_by_id():
     id_ = input("Enter the maintenance's id: ")
@@ -84,9 +130,7 @@ def create_maintenance():
     description = input("Enter the maintenance description: ")
     date_performed = input("Enter the date performed: ")
     try:
-        # Adjusted to use 'id' instead of 'maintenance_id'
-        maintenance_id = int(input("Enter the maintenance ID: "))
-        maintenance = Maintenance(maintenance_id, car_vin, maintenance_type, description, date_performed)
+        maintenance = Maintenance(None, car_vin, maintenance_type, description, date_performed)
         maintenance.save()
         print(f'Success: {maintenance}')
     except Exception as exc:
@@ -137,9 +181,9 @@ def create_comment():
     maintenance_id = input("Enter the maintenance's id: ")
     comment_text = input("Enter the comment: ")
     try:
-        comment = Comment(None, maintenance_id, comment_text)  # id is None or 0 if auto-generated
+        comment = Comment(None, maintenance_id, comment_text)
         comment.save()
-        print(f'Success: Comment {comment.id} created')  # Corrected from comment.comment_id to comment.id
+        print(f'Success: Comment {comment.id} created')
     except Exception as exc:
         print("Error creating comment:", exc)
 
@@ -273,4 +317,5 @@ def main():
             print("Invalid choice! Please enter a valid option.")
 
 if __name__ == "__main__":
-    main()
+    create_tables()  
+    main()  
