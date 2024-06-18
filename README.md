@@ -42,7 +42,7 @@ Tables (cars, maintenance, comments) are created with necessary schemas.
 
 
 ## Usage
-Run the Application: #python main.py
+Run the Application: $ python main.py
 
 This starts the application and presents the main menu.
 Use numeric options to navigate through Cars, Maintenance, and Comments menus.
